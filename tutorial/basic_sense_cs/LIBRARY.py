@@ -243,6 +243,9 @@ def ifft2call(data, dim1, dim2):
     return shifted_rows
 
 
+def inverse_fft2_shift(kspace):
+    return np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(kspace, axes=(-2,-1)), norm='ortho'),axes=(-2,-1))
+
 
 def fft2call(data, dim1, dim2):
     """
@@ -298,13 +301,76 @@ def fft2call(data, dim1, dim2):
 
 
 def nrmse(img1, img2):
+    """Compute the normalized root mean squared error (NRMSE) between two images.
+
+    The function computes the root-mean-square error (RMSE) between ``img1``
+    and ``img2`` using the magnitude for complex inputs, and normalizes the
+    RMSE by the root-mean-square (RMS) of ``img2``. The returned value is
+    expressed as a percentage::
+
+        NRMSE = 100 * RMSE / RMS(img2)
+
+    where::
+
+        RMSE = sqrt(mean(|img1 - img2|^2))
+        RMS(img2) = sqrt(mean(|img2|^2))
+
+    Parameters
+    ----------
+    img1 : array_like
+        Reconstructed or test image. May be real or complex. Must be
+        broadcastable to ``img2``.
+    img2 : array_like
+        Reference or ground-truth image. May be real or complex.
+
+    Returns
+    -------
+    float
+        NRMSE value in percent. If the RMS of ``img2`` is zero the result
+        will follow NumPy's division semantics (``inf`` or ``nan``).
+
+    Notes
+    -----
+    - The function compares magnitudes when inputs are complex (uses
+      ``np.abs``).
+    - The output is scaled by 100 to present the error as a percentage.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> a = np.array([0., 1., 2.])
+    >>> b = np.array([0., 1., 3.])
+    >>> nrmse(a, b)
+    18.257418583505537
+    """
     # Compute the RMSE
     rmse = np.sqrt(np.mean(np.abs(img1 - img2) ** 2))
-    
-    # Compute the mean of img2
+
+    # Compute the RMS of img2
     mean_img2 = np.sqrt(np.mean(np.abs(img2) ** 2))
-    
-    # Compute the NRMSE
+
+    # Compute the NRMSE (percentage)
     nrmse_value = 100 * rmse / mean_img2
-    
+
     return nrmse_value
+
+
+def show_coils_grid(data, coil_indices=None, cmap='viridis', nrows=4, ncols=5, fig_size=(12,9)):
+    if coil_indices is None:
+        coil_indices = list(range(data.shape[0]))
+    fig, axes = plt.subplots(nrows, ncols, figsize=fig_size)
+    axes = axes.flatten()
+    # consistent color scaling across all coils
+    vals = np.array([data[i] for i in coil_indices])
+    vmin = vals.min()
+    vmax = vals.max()
+    im = None
+    for ax, idx in zip(axes, coil_indices):
+        im = ax.imshow(data[idx], cmap=cmap, vmin=vmin, vmax=vmax, interpolation='nearest')
+        ax.set_title(f'Coil {idx}', fontsize=9)
+        ax.axis('off')
+    # turn off any unused axes
+    for ax in axes[len(coil_indices):]:
+        ax.axis('off')
+    #fig.tight_layout(rect=[0,0,0.92,0.96])
+    fig.suptitle('Signal from the 20 coils on 1 middle slice', fontsize=14)

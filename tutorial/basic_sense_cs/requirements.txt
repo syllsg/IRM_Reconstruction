@@ -22,8 +22,8 @@ blas=1.0=mkl
 bleach=6.2.0=pypi_0
 brotli-python=1.0.9=py39h6a678d5_9
 c-ares=1.19.1=h5eee18b_0
-ca-certificates=2025.2.25=h06a4308_0
-certifi=2025.1.31=py39h06a4308_0
+ca-certificates=2025.12.2=h06a4308_0
+certifi=2025.10.5=py39h06a4308_0
 cffi=1.17.1=pypi_0
 charset-normalizer=3.3.2=pyhd3eb1b0_0
 comm=0.2.2=pypi_0
@@ -105,7 +105,9 @@ libuuid=1.41.5=h5eee18b_0
 libwebp-base=1.3.2=h5eee18b_1
 libxcb=1.15=h7f8727e_0
 libxml2=2.9.14=h74e7548_0
+libxslt=1.1.35=h4e12654_0
 llvmlite=0.36.0=py39h612dafd_4
+lxml=4.9.1=py39h1edc446_0
 lz4-c=1.9.4=h6a678d5_1
 markdown=3.4.1=py39h06a4308_0
 markupsafe=3.0.2=py39h5eee18b_0

@@ -3,9 +3,9 @@
 ![Alt text](figure/logo.png?raw=true "MRI Reconstruction Tutorial Logo")
 
 ---
-
-This repository contains code, data references, and documentation for the **MRI Reconstruction Tutorial** accompanying the review paper:
+This repository is derived from the [repository](https://github.com/tutorial-MRI-recon/tutorial) that contains code, data references, and documentation for the **MRI Reconstruction Tutorial** accompanying the review paper:
 **"A Tutorial on MRI Reconstruction: From Modern Methods to Clinical Implications"**.
+The code is updated and completed to get a IRM reconstruction tutorial for beginners.
 
 ---
 
@@ -68,9 +68,11 @@ cd tutorial/path_to_each_method
 conda env create -f environment.yaml   *
 conda activate name_of_env
 ```
-* In case of error "_CondaError: Run 'conda init' before 'conda activate'_" when performing ```/home/lehmansy/miniconda3/bin/conda activate recon_tutorial```
+* In case of error "_CondaError: Run 'conda init' before 'conda activate'_" when performing ```/home/lehmansy/miniconda3Cconda activate recon_tutorial```
 use ```conda init --all``` then activate the environment.
 ---
+
+The original repo was modified in order to use uv as a dependencies manager
 
 ## Data
 To replicate the results, please download the raw [fastMRI](https://fastmri.med.nyu.edu/) data used in the tutorial from [here](https://www.dropbox.com/scl/fi/9ag9tj6oeci1x6uxaq6s4/file_brain_AXT2_205_2050058.h5?rlkey=xmr8o0xlzffjxsg604yup7vvw&dl=0).
