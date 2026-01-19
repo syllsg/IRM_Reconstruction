@@ -1,0 +1,14 @@
+[project]
+name = "reco-sl"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "h5py>=3.14.0",
+    "ipykernel>=6.31.0",
+    "lxml>=6.0.2",
+    "matplotlib>=3.9.4",
+    "numpy>=2.0.2",
+    "sigpy>=0.1.27",
+]
