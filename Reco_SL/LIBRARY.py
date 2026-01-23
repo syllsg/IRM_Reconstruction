@@ -355,7 +355,7 @@ def nrmse(img1, img2):
     return nrmse_value
 
 
-def show_coils_grid(data, coil_indices=None, cmap='viridis', nrows=4, ncols=5, fig_size=(12,9)):
+def show_grid(data, coil_indices=None, cmap='viridis', nrows=4, ncols=5, fig_size=(12,9)):
     if coil_indices is None:
         coil_indices = list(range(data.shape[0]))
     fig, axes = plt.subplots(nrows, ncols, figsize=fig_size)

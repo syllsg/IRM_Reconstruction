@@ -2,17 +2,68 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-#===============Fourier Transform
-def inverse_fft2_shift(kspace):
-    """Function that takes kspace data as input and output the corresponding image"""
+#=============== Fourier Transform
+def inverse_fft2_shift_1slice(kspace):
+    """Function that takes kspace data from 1 slice as input and output the corresponding image.
+    This function transforms the k-space array from the frequency domain back to the spatial domain, apply the 'ortho' normalization factor, and return the image.
+    :param kspace: shape(number of coils, height, width)
+    :return: Images corresponding to k-space with same shape as k-space (number of coils, height, width)
+    """
     return np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(kspace, axes=(-2,-1)), norm='ortho'),axes=(-2,-1))
 
 
+def inverse_fft2_shift_all_splices(mri_data):
+    """
+    Function that applys the inverse_fft2_shift_1slice function to each slice along the 0th dimension of the MRI data and return an array of images with the same shape.
+    it prints the shape of the returned array.
+    Each image in the resulting array is the result of inverse FFT and shift applied to the corresponding slice in the original 3D image data.
+    
+    :param mri_data: k-space with the following shape: (number of slices, number of coils, height, width)
+    :return: Images corresponding to k-space with same shape as k-space (number of slices, number of coils, height, width)
+    :rtype: Array
+    """
+    # Initialize an empty list to store the images
+    images = []
+    # Iterate over each slice along the 0th dimension
+    for i in range(mri_data.shape[0]):
+        # Apply the inverse FFT and shift functions to each slice
+        reconstructed_image = inverse_fft2_shift_1slice(mri_data[i])
+        # Append the reconstructed image to the list
+        images.append(reconstructed_image)
 
-#===============Plot
-def show_coils_grid(data, coil_indices=None, cmap='viridis', nrows=4, ncols=5, fig_size=(12,9)):
+    # Convert the list of images into a numpy array
+    reconstructed_images = np.array(images)
+
+    # Check the shape of the resulting array
+    print(reconstructed_images.shape)  # Should print (16, 20, 640, 320)
+    return reconstructed_images
+
+
+#=============== Plot
+def show_grid(data, coil_indices=None, cmap='viridis', set_vmax= None,nrows=4, ncols=5, type ="Coil" ,title = 'Signal from the 20 coils on 1 middle slice',fig_size=(12,9)):
+    """
+    This function plots multi-coil data for a single slice for each coil individually or different slices of MRI data. The default type is coil but you can change it to slice
+    The first dimension of the data must contains the slices or coils that you want to plot separately. ex : (16, 320, 320). If not specify it with coil_indices
+    Default values for the figure can be used to plot 20 sublplots. 
+    If data is k-space, then you should apply: np.log(np.abs(k_space_1_slice) + 1e-9) to get and modify magnitude before plotting. Note that a small constant is added for numerical stability.
+    If data is images, you should apply : np.abs(image_1_slice) to get the magnitude values before plotting.
+    This function can be used also to plot the different slices of an exam.
+    set_vmax allows to modify the calculated color scaling. If vmin or set_vmax is None, the image max will be used for color scaling.
+    
+    :param data: k-space or corresponding image from multi-coil. 3D array with coils or slices in 1st dimension. 
+    :param coil_indices: Description
+    :param cmap: Description
+    :param nrows: Description
+    :param ncols: Description
+    :param fig_size: Description
+    :return: Description
+    :rtype: Any
+    example : show_grid(np.abs(image_8th_slice), coil_indices=[i for i in range(0, 20)], cmap='gray', nrows=4, ncols=5, fig_size=(10,8))
+    """
     if coil_indices is None:
         coil_indices = list(range(data.shape[0]))
+    else:
+        coil_indices = list(range(data.shape[coil_indices]))
     fig, axes = plt.subplots(nrows, ncols, figsize=fig_size)
     axes = axes.flatten()
     # consistent color scaling across all coils
@@ -21,17 +72,22 @@ def show_coils_grid(data, coil_indices=None, cmap='viridis', nrows=4, ncols=5, f
     vmax = vals.max()
     im = None
     for ax, idx in zip(axes, coil_indices):
-        im = ax.imshow(data[idx], cmap=cmap, vmin=vmin, vmax=vmax, interpolation='nearest')
-        ax.set_title(f'Coil {idx}', fontsize=9)
+        if set_vmax == None:
+            im = ax.imshow(data[idx], cmap=cmap, vmin=vmin, vmax=vmax, interpolation='nearest')
+        else:
+            im = ax.imshow(data[idx], cmap=cmap, vmin=vmin, vmax=set_vmax, interpolation='nearest')
+        ax.set_title(f'{type} {idx}', fontsize=9)
         ax.axis('off')
     # turn off any unused axes
     for ax in axes[len(coil_indices):]:
         ax.axis('off')
-    #fig.tight_layout(rect=[0,0,0.92,0.96])
-    fig.suptitle('Signal from the 20 coils on 1 middle slice', fontsize=14)
+    fig.tight_layout(rect=[0,0,0.92,0.96])
+    fig.suptitle(title, fontsize=14)
+
+   
     
 
-
+#=============== Multi-coil combination
 def rsos(x, dim):
     """
     Compute the root-sum-of-squares (RSS) along the coil axis to combine multi coil signal.
@@ -108,53 +164,35 @@ def mosaic(img, num_row, num_col, fig_num, clim, title = '', use_transpose = Fal
     >>> tiles = np.random.rand(64, 64, 9)
     >>> mosaic(tiles, num_row=3, num_col=3, fig_num=1, clim=(0, 1), title='Example')
     """
-
     fig = plt.figure(fig_num)
     fig.patch.set_facecolor('black')
-
     if img.ndim < 3:
         img_res = img
         plt.imshow(img_res)
         plt.gray()        
         plt.clim(clim)
-
     else:
-        
         if img.shape[2] != (num_row * num_col):
             print('sizes do not match')    
         else:   
-            
             if use_transpose:
                 for slc in range(0, img.shape[2]):
                     img[:,:,slc] = np.transpose(img[:,:,slc])
-            
             if use_flipud:
                 img = np.flipud(img)
                 
-            
             img_res = np.zeros((img.shape[0]*num_row, img.shape[1]*num_col))
-            
             idx = 0
-            
             for r in range(0, num_row):
                 for c in range(0, num_col):
                     img_res[r*img.shape[0] : (r+1)*img.shape[0], c*img.shape[1] : (c+1)*img.shape[1]] = img[:,:,idx]
                     idx = idx + 1
-                
-      
-                
         plt.imshow(img_res)
         plt.gray()        
         plt.clim(clim)
-
-        
     plt.suptitle(title, color='white', fontsize=48)
 
 
-
-
-
-    
 
 def ifft2call(data, dim1, dim2):
     """perform 2-D inverse discrete Fourier Transform. Takes as arguments : kspace data as numpy array (? number of dimensions) and  two axes the transform is computed over   """
