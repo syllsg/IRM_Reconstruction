@@ -3,14 +3,16 @@ import numpy as np
 
 
 #=============== Fourier Transform
+
+#*****From Kspace to image
 def inverse_fft2_shift_1slice(kspace):
     """Function that takes kspace data from 1 slice as input and output the corresponding image.
     This function transforms the k-space array from the frequency domain back to the spatial domain, apply the 'ortho' normalization factor, and return the image.
+    The axes=(-2, -1) argument ensures that the transform is applied to the last two dimensions (the spatial dimensions), leaving the coil dimension untouched.
     :param kspace: shape(number of coils, height, width)
     :return: Images corresponding to k-space with same shape as k-space (number of coils, height, width)
     """
     return np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(kspace, axes=(-2,-1)), norm='ortho'),axes=(-2,-1))
-
 
 def inverse_fft2_shift_all_splices(mri_data):
     """
@@ -37,6 +39,16 @@ def inverse_fft2_shift_all_splices(mri_data):
     # Check the shape of the resulting array
     print(reconstructed_images.shape)  # Should print (16, 20, 640, 320)
     return reconstructed_images
+
+
+#*****From image to Kspace
+def ft2_np(image):
+    """2D forward Fourier transform (image → k-space)
+    Parameters:  image (np.ndarray): 2, 3 or 4-D input image array takes the 2 last dimension corresponding to x and y. Coils should be in first position
+    Returns: np.ndarray: Transformed k-space image."""
+    # Center the image, apply the forward FFT, shift the result,
+    # and normalize the FFT results.
+    return np.fft.fftshift(np.fft.fft2(np.fft.ifftshift(image, axes=(-2,-1)), norm='ortho'), axes=(-2,-1))
 
 
 #=============== Plot
@@ -84,8 +96,17 @@ def show_grid(data, coil_indices=None, cmap='viridis', set_vmax= None,nrows=4, n
     fig.tight_layout(rect=[0,0,0.92,0.96])
     fig.suptitle(title, fontsize=14)
 
-   
-    
+def show_1_2D_img(img, title, clim=[0,5e-4]):
+    """
+    Display grayscale image with matplotlib.
+    """
+    plt.imshow(img, cmap='gray')
+    plt.title(title)
+    plt.axis('off')
+    plt.clim(clim)
+
+
+
 
 #=============== Multi-coil combination
 def rsos(x, dim):
@@ -115,169 +136,70 @@ def rsos(x, dim):
 
 
 
-def mosaic(img, num_row, num_col, fig_num, clim, title = '', use_transpose = False, use_flipud = False):
+#***old functions
+def calculate_rmse(actual, predicted):
     """
-    Create and display a mosaic of image tiles using matplotlib.
+    Calculate the Root Mean Square Error (RMSE).
 
-    Parameters
-    ----------
-    img : ndarray
-        If 2-D, the image is displayed directly. If 3-D, the expected shape
-        is (H, W, N) where N == ``num_row * num_col``; the function arranges
-        the N tiles into a single mosaic image in row-major order (tiles are
-        taken from the third axis).
-    num_row : int
-        Number of rows in the mosaic.
-    num_col : int
-        Number of columns in the mosaic.
-    fig_num : int
-        Matplotlib figure number to create/use for the display.
-    clim : tuple or list
-        Color limits passed to ``plt.clim`` (e.g., ``(vmin, vmax)``).
-    title : str, optional
-        Figure title (default: empty string).
-    use_transpose : bool, optional
-        If True, each tile will be transposed before placing it in the
-        mosaic. Note: when True the function modifies the input tiles in
-        place for each slice (the transposition assignment is done
-        in-place).
-    use_flipud : bool, optional
-        If True, the (assembled) image is flipped upside-down using
-        ``np.flipud`` before displaying.
+    Parameters:
+    actual (np.ndarray): The actual or true values.
+    predicted (np.ndarray): The predicted or reconstructed values.
 
-    Returns
-    -------
-    None
-        The function displays the mosaic using matplotlib and does not
-        return a value.
-
-    Notes
-    -----
-    - If ``img.ndim < 3``, the image is displayed directly and the mosaic
-      layout parameters are ignored.
-    - If the number of tiles in the third axis does not equal
-      ``num_row * num_col``, the function prints a warning message and
-      does not construct the mosaic.
-
-    Example
-    -------
-    >>> tiles = np.random.rand(64, 64, 9)
-    >>> mosaic(tiles, num_row=3, num_col=3, fig_num=1, clim=(0, 1), title='Example')
+    Returns:
+    float: RMSE value.
     """
-    fig = plt.figure(fig_num)
-    fig.patch.set_facecolor('black')
-    if img.ndim < 3:
-        img_res = img
-        plt.imshow(img_res)
-        plt.gray()        
-        plt.clim(clim)
-    else:
-        if img.shape[2] != (num_row * num_col):
-            print('sizes do not match')    
-        else:   
-            if use_transpose:
-                for slc in range(0, img.shape[2]):
-                    img[:,:,slc] = np.transpose(img[:,:,slc])
-            if use_flipud:
-                img = np.flipud(img)
-                
-            img_res = np.zeros((img.shape[0]*num_row, img.shape[1]*num_col))
-            idx = 0
-            for r in range(0, num_row):
-                for c in range(0, num_col):
-                    img_res[r*img.shape[0] : (r+1)*img.shape[0], c*img.shape[1] : (c+1)*img.shape[1]] = img[:,:,idx]
-                    idx = idx + 1
-        plt.imshow(img_res)
-        plt.gray()        
-        plt.clim(clim)
-    plt.suptitle(title, color='white', fontsize=48)
+    # Ensure the actual and predicted arrays have the same shape
+    if actual.shape != predicted.shape:
+        raise ValueError("The actual and predicted arrays must have the same shape.")
+
+    # Compute the squared differences
+    squared_diffs = (actual - predicted) ** 2
+
+    # Compute the mean of the squared differences
+    mean_squared_diff =  np.mean(np.abs(squared_diffs))
+
+    # Take the square root of the mean squared differences to get RMSE
+    rmse = np.sqrt(mean_squared_diff)
+
+    return rmse
 
 
 
-def ifft2call(data, dim1, dim2):
-    """perform 2-D inverse discrete Fourier Transform. Takes as arguments : kspace data as numpy array (? number of dimensions) and  two axes the transform is computed over   """
-    shifted_rows = np.fft.ifftshift(data, axes=dim1)
-    shifted_rows = np.fft.ifft(shifted_rows, axis=dim1)
-    shifted_rows = np.fft.fftshift(shifted_rows, axes=dim1)
-
-
-    shifted_rows = np.fft.ifftshift(shifted_rows, axes=dim2)
-    shifted_rows = np.fft.ifft(shifted_rows, axis=dim2)
-    shifted_rows = np.fft.fftshift(shifted_rows, axes=dim2)
-
-    shifted_rows = shifted_rows * np.sqrt(shifted_rows.shape[dim1] * shifted_rows.shape[dim2])
-
-    return shifted_rows
-
-
-
-
-
-def fft2call(data, dim1, dim2):
+def calculate_nrmse(actual, predicted):
     """
-    Perform a 2-D discrete Fourier transform on `data` across two axes.
+    Calculate the Normalized Root Mean Square Error (NRMSE).
 
-    This function applies an FFT along `dim1` and `dim2` with pre- and
-    post-shifts so the input is treated as centered k-space. The result is
-    normalized by dividing by sqrt(N1 * N2) where N1 and N2 are the sizes of
-    the transformed axes. This normalization makes the forward/backward
-    transforms unitary when paired with the corresponding normalization used
-    in `ifft2call` (which multiplies by the same factor).
+    Parameters:
+    actual (np.ndarray): The actual or true values.
+    predicted (np.ndarray): The predicted or reconstructed values.
 
-    Parameters
-    ----------
-    data : array_like
-        Input array (e.g., image or k-space) to transform.
-    dim1 : int
-        First axis to transform (passed to numpy FFT as `axis`).
-    dim2 : int
-        Second axis to transform (passed to numpy FFT as `axis`).
-
-    Returns
-    -------
-    ndarray
-        The transformed array with the same shape as `data`.
-
-    Notes
-    -----
-    - The function uses `np.fft.ifftshift/fft/fftshift` sequence for each
-      axis so that the zero-frequency component is correctly handled for
-      data that is centered.
-    - The normalization by `sqrt(N1 * N2)` yields a unitary-style transform
-      when combined with `ifft2call` which multiplies by the same factor.
-
-    Example
-    -------
-    >>> img = np.zeros((4,4))
-    >>> out = fft2call(img, 0, 1)
-
+    Returns:
+    float: NRMSE value.
     """
-    shifted_rows = np.fft.ifftshift(data, axes=dim1)
-    shifted_rows = np.fft.fft(shifted_rows, axis=dim1)
-    shifted_rows = np.fft.fftshift(shifted_rows, axes=dim1)
+    # Ensure the actual and predicted arrays have the same shape
+    if actual.shape != predicted.shape:
+        raise ValueError("The actual and predicted arrays must have the same shape.")
 
+    # Compute the squared differences
+    squared_diffs = (actual - predicted) ** 2
 
-    shifted_rows = np.fft.ifftshift(shifted_rows, axes=dim2)
-    shifted_rows = np.fft.fft(shifted_rows, axis=dim2)
-    shifted_rows = np.fft.fftshift(shifted_rows, axes=dim2)
+    # Compute the mean of the absolute squared differences to get magnitude only info
+    mean_squared_diff = np.mean(np.abs(squared_diffs))
 
-    shifted_rows = shifted_rows / np.sqrt(shifted_rows.shape[dim1] * shifted_rows.shape[dim2])
+    # Compute the maximum absolute value of the actual data
+    mean_abs_actual = np.mean(np.abs(actual))
 
-    return shifted_rows
+    # Normalize the mean squared difference by the maximum absolute value
+    nrmse = np.sqrt(mean_squared_diff) / mean_abs_actual 
 
+    return nrmse
 
 def nrmse(img1, img2):
-    """Compute the normalized root mean squared error (NRMSE) between two images.
-
-    The function computes the root-mean-square error (RMSE) between ``img1``
-    and ``img2`` using the magnitude for complex inputs, and normalizes the
-    RMSE by the root-mean-square (RMS) of ``img2``. The returned value is
-    expressed as a percentage::
-
+    """Compute the normalized root mean squared error (NRMSE) between two images. The function computes the root-mean-square error (RMSE) between ``img1``
+    and ``img2`` using the magnitude for complex inputs, and normalizes the RMSE by the root-mean-square (RMS) of ``img2``. The returned value is expressed as a percentage::
         NRMSE = 100 * RMSE / RMS(img2)
 
     where::
-
         RMSE = sqrt(mean(|img1 - img2|^2))
         RMS(img2) = sqrt(mean(|img2|^2))
 
@@ -297,8 +219,7 @@ def nrmse(img1, img2):
 
     Notes
     -----
-    - The function compares magnitudes when inputs are complex (uses
-      ``np.abs``).
+    - The function compares magnitudes when inputs are complex (uses ``np.abs``).
     - The output is scaled by 100 to present the error as a percentage.
 
     Examples
@@ -319,4 +240,17 @@ def nrmse(img1, img2):
     nrmse_value = 100 * rmse / mean_img2
 
     return nrmse_value
+
+
+
+
+
+
+
+
+
+
+
+
+
 

@@ -1,0 +1,11 @@
+{
+    "undersampling": {
+        "type": "cartesian",
+        "acceleration_factor": 4,
+        "center_fraction": 0.08
+    },
+    "reconstruction_methods": [
+        "rss",
+        "sensitivity_based"
+    ]
+}

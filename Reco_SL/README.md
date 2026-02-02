@@ -22,6 +22,9 @@ ESPIRiT [Paper](https://pubmed.ncbi.nlm.nih.gov/23649942/) and
 [Library](https://sigpy.readthedocs.io/en/latest/generated/sigpy.mri.app.EspiritCalib.html#sigpy.mri.app.EspiritCalib) links. 
 ESPIRiT is a method that finds the subspace of multi-coil data from a calibration region in k-space using a series of eigen-value decompositions in k-space and image space. Here we also use the "soft" sense idea (Uecker et. al, "ESPIRiT Reconstruction using Soft-SENSE", Proceedings of the ISMRM 2013, pp-127) by using the eigen values to weight the eigen-vectors.
 
+### Plotting settings
+You may have to adjust manually the maximum value of the image in case of bright spots hiding the whole image. For this adjust vmin and vmax values in plt.imshow(). Ex :  vmin=0, vmax=5e-4
+
 ### Reconstruction methods
 These notebooks use the SigPy library and in particular the [apps](https://sigpy.readthedocs.io/en/latest/mri_app.html) : EspiritCalib for	ESPIRiT calibration, SenseRecon for SENSE Reconstruction, L1WaveletRecon for L1 Wavelet regularized reconstruction.
 "Two different lines of reconstruction algorithms were mostly used: Reconstruction algorithms based on explicit knowledge of the coil sensitivities such as SENSE [1, 2] and algorithms based on local kernels in k-space, which exploit the learned correlation between multiple channels in neighboring points in k-space, such as GRAPPA and SPIRiT". [link](https://pmc.ncbi.nlm.nih.gov/articles/PMC4142121/)

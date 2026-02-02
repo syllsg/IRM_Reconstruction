@@ -10,6 +10,8 @@ dependencies = [
     "lxml>=6.0.2",
     "matplotlib>=3.9.4",
     "numpy>=2.0.2",
+    "pandas>=2.3.3",
+    "scikit-image>=0.24.0",
     "scipy>=1.13.1",
     "sigpy>=0.1.27",
 ]
