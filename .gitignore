@@ -1,20 +1,19 @@
 # Python-generated files
-__pycache__/
+__pycache__
 *.py[oc]
 build/
 dist/
 wheels/
 *.egg-info
 
-# Virtual environments
+Config/config.py
+
+Tests/*
+**/Misc
+
+**/SIEMENS
+
+# virtual environments
 .venv
-.env
+uv.lock
 
-# Folders
-tmp
-.cache
-
-# Data
-data
-*.mat
-*.h5
