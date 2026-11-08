@@ -17,6 +17,9 @@ Tests/*
 # data
 data
 
+#img
+img
+
 # virtual environments
 .venv
 uv.lock
